@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+firecrawl-py
+beautifulsoup4
+lxml
+phonenumbers
+openpyxl
+sqlalchemy
+pydantic-settings
+python-dotenv
+httpx
+google-generativeai
+ollama
