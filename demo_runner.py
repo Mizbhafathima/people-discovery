@@ -8,7 +8,6 @@ import time
 from dotenv import load_dotenv
 
 from backend.config import settings
-from backend.core.utils import extract_domain
 from backend.database import crud
 from backend.database.session import SessionLocal, init_db
 from backend.services.crawler import CrawlerService
@@ -20,36 +19,34 @@ logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_ROOT / "backend" / "data"
-DOMAINS_FILE = PROJECT_ROOT / "domains.txt"
+INPUTS_FILE = PROJECT_ROOT / "inputs.txt"
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-
-def load_domains() -> list[str]:
-    if not DOMAINS_FILE.exists():
-        print("Error: domains.txt not found in project root.")
+def load_inputs() -> list[str]:
+    """
+    Load inputs from inputs.txt, skipping empty lines and comments.
+    """
+    if not INPUTS_FILE.exists():
+        print("Error: inputs.txt not found in project root.")
         sys.exit(1)
 
-    domains = []
-    for line in DOMAINS_FILE.read_text(encoding="utf-8").splitlines():
+    inputs = []
+    for line in INPUTS_FILE.read_text(encoding="utf-8").splitlines():
         value = line.strip()
         if not value or value.startswith("#"):
             continue
-        domains.append(value)
+        inputs.append(value)
 
-    if not domains:
-        print("Error: domains.txt has no valid domains.")
+    if not inputs:
+        print("Error: inputs.txt has no valid entries.")
         sys.exit(1)
 
-    if len(domains) > 50:
-        logger.warning("domains.txt contains %s domains; using first 50.", len(domains))
-        domains = domains[:50]
-
-    return domains
-
+    logger.info("Loaded %d inputs from inputs.txt", len(inputs))
+    return inputs
 
 async def main() -> None:
-    domains = load_domains()
+    inputs = load_inputs()
     init_db()
 
     crawler = CrawlerService()
@@ -61,19 +58,19 @@ async def main() -> None:
 
     print("=" * 72)
     print("People Discovery Demo Runner")
-    print(f"Domains: {len(domains)}")
+    print(f"Inputs: {len(inputs)}")
     print(f"Max pages per crawl: {settings.MAX_PAGES_PER_CRAWL}")
     print(f"LLM provider: {settings.LLM_PROVIDER}")
     print(f"Start time (UTC): {start_time.isoformat()}")
     print("=" * 72)
 
     try:
-        for index, domain in enumerate(domains):
-            print(f"[{index + 1}/{len(domains)}] Crawling: {domain}")
+        for index, raw_input in enumerate(inputs):
+            display = raw_input if raw_input.startswith("http") else f"Domain: {raw_input}"
+            print(f"[{index + 1}/{len(inputs)}] Crawling: {display}")
             try:
-                canonical_domain = extract_domain(domain)
-                job = crud.create_crawl_job(db, canonical_domain)
-                await crawler.run_crawl(job.id, domain, db)
+                job = crud.create_crawl_job(db, raw_input)
+                await crawler.run_crawl(job.id, raw_input, db)
                 updated_job = crud.get_crawl_job(db, job.id)
 
                 pages = updated_job.pages_crawled if updated_job else 0
@@ -82,7 +79,7 @@ async def main() -> None:
 
                 summary.append(
                     {
-                        "domain": domain,
+                        "input": raw_input,
                         "status": "success",
                         "pages_crawled": pages,
                         "people_found": people_count,
@@ -93,7 +90,7 @@ async def main() -> None:
                 print(f"  Failed: {exc}")
                 summary.append(
                     {
-                        "domain": domain,
+                        "input": raw_input,
                         "status": "failed",
                         "pages_crawled": 0,
                         "people_found": 0,
@@ -117,7 +114,7 @@ async def main() -> None:
 
         print("\nRun Summary")
         print("-" * 72)
-        print(f"Total domains: {len(summary)}")
+        print(f"Total inputs: {len(summary)}")
         print(f"Success: {success_count}")
         print(f"Failed: {fail_count}")
         print(f"JSON export: {json_path}")
@@ -125,13 +122,12 @@ async def main() -> None:
 
         failed = [item for item in summary if item["status"] == "failed"]
         if failed:
-            print("\nFailed Domains")
+            print("\nFailed Inputs")
             print("-" * 72)
             for item in failed:
-                print(f"{item['domain']}: {item['error']}")
+                print(f"{item['input']}: {item['error']}")
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     asyncio.run(main())

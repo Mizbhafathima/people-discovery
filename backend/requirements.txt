@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
-firecrawl-py
+crawl4ai
 beautifulsoup4
 lxml
 phonenumbers

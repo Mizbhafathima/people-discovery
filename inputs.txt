@@ -1,0 +1,8 @@
+# Full URLs - crawls only this exact page
+https://corporate.deliveroo.co.uk/about-us/leadership-team
+https://www.revolut.com/about/leadership
+
+# Plain domains - crawls priority pages automatically
+stripe.com
+monzo.com
+notion.so

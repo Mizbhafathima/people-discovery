@@ -8,8 +8,7 @@ ENV_FILE = BASE_DIR / ".env"
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "sqlite:///./backend/data/people_discovery.db"
-    FIRECRAWL_API_KEY: str = ""
+    DATABASE_URL: str = "sqlite:///./data/people_discovery.db"
     MAX_PAGES_PER_CRAWL: int = 50
     LLM_PROVIDER: str = "google"
     GOOGLE_API_KEY: str = ""
@@ -29,7 +28,5 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-if not settings.FIRECRAWL_API_KEY:
-    warnings.warn("FIRECRAWL_API_KEY is not set in backend/.env")
 if not settings.GOOGLE_API_KEY:
     warnings.warn("GOOGLE_API_KEY is not set in backend/.env")
