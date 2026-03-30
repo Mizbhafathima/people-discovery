@@ -20,8 +20,18 @@ POSTCODE_PATTERNS = {
 }
 
 LINKEDIN_PATTERN = re.compile(
-    r"https?://(?:[a-z]{2,3}\.)?(?:www\.)?linkedin\.com/in/[A-Za-z0-9\-_%]+(?:/[A-Za-z0-9\-_%]+)*/?",
-    re.IGNORECASE,
+    r'(?:https?://)?(?:www\.)?linkedin\.com/in/[\w\-]+',
+    re.IGNORECASE
+)
+
+INSTAGRAM_PATTERN = re.compile(
+    r'(?:https?://)?(?:www\.)?instagram\.com/(?!p/|reel/|explore/)[\w\.\-]+',
+    re.IGNORECASE
+)
+
+TWITTER_PATTERN = re.compile(
+    r'(?:https?://)?(?:www\.)?(?:twitter|x)\.com/(?!i/|intent/|share)[\w\-]+',
+    re.IGNORECASE
 )
 
 SOCIAL_PATTERNS = {

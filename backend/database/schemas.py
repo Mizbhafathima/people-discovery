@@ -33,9 +33,10 @@ class PersonResponse(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
-    postcode: Optional[str] = None
     job_title: Optional[str] = None
     linkedin_url: Optional[str] = None
+    instagram_url: Optional[str] = None
+    twitter_url: Optional[str] = None
     source_url: str
     confidence: int
     created_at: datetime

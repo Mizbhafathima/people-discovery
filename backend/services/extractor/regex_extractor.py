@@ -7,6 +7,8 @@ from backend.core.regex_patterns import (
     PHONE_PATTERNS,
     POSTCODE_PATTERNS,
     LINKEDIN_PATTERN,
+    INSTAGRAM_PATTERN,
+    TWITTER_PATTERN,
     clean_phone,
 )
 from backend.core.utils import is_valid_email
@@ -41,7 +43,7 @@ class RegexExtractor:
                 raw_phone = clean_phone(match.group(0))
                 parsed_number = None
 
-                for region in (None, "GB", "US"):
+                for region in (None, "US", "GB", "IN", "CA", "AU", "DE", "FR", "AE"):
                     try:
                         parsed_number = phonenumbers.parse(raw_phone, region)
                         if phonenumbers.is_valid_number(parsed_number):
@@ -75,8 +77,41 @@ class RegexExtractor:
         urls = []
         for match in LINKEDIN_PATTERN.finditer(text):
             url = match.group(0)
-            if url not in urls:
-                urls.append(url)
+            # Normalize to ensure https://
+            if not url.startswith(('http://', 'https://')):
+                url = 'https://' + url
+            # Filter out company, school, org pages
+            if '/company/' not in url and '/school/' not in url and '/org/' not in url:
+                if url not in urls:
+                    urls.append(url)
+        return urls
+
+    def extract_instagram_urls(self, text: str) -> List[str]:
+        urls = []
+        for match in INSTAGRAM_PATTERN.finditer(text):
+            url = match.group(0)
+            # Normalize to ensure https://
+            if not url.startswith(('http://', 'https://')):
+                url = 'https://' + url
+            # Filter out company/business pages
+            if '/company/' not in url and '/business/' not in url:
+                if url not in urls:
+                    urls.append(url)
+        return urls
+
+    def extract_twitter_urls(self, text: str) -> List[str]:
+        urls = []
+        non_person_paths = ['/home', '/explore', '/notifications', '/messages', '/i/', '/intent/', '/share', '/hashtag']
+        
+        for match in TWITTER_PATTERN.finditer(text):
+            url = match.group(0)
+            # Normalize to ensure https://
+            if not url.startswith(('http://', 'https://')):
+                url = 'https://' + url
+            # Filter out known non-person paths
+            if not any(path in url for path in non_person_paths):
+                if url not in urls:
+                    urls.append(url)
         return urls
 
     def extract_all(self, text: str, source_url: str) -> dict:
@@ -85,5 +120,7 @@ class RegexExtractor:
             "phones": self.extract_phones(text),
             "postcodes": self.extract_postcodes(text),
             "linkedin_urls": self.extract_linkedin_urls(text),
+            "instagram_urls": self.extract_instagram_urls(text),
+            "twitter_urls": self.extract_twitter_urls(text),
             "source_url": source_url,
         }

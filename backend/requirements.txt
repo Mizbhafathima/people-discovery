@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
-firecrawl-py
+crawl4ai
 beautifulsoup4
 lxml
 phonenumbers
@@ -9,5 +9,5 @@ sqlalchemy
 pydantic-settings
 python-dotenv
 httpx
-google-generativeai
-ollama
+google-genai
+gliner
