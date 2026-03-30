@@ -9,5 +9,5 @@ sqlalchemy
 pydantic-settings
 python-dotenv
 httpx
-google-generativeai
-ollama
+google-genai
+gliner

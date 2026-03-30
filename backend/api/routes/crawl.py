@@ -1,15 +1,28 @@
-﻿from typing import List
+﻿import logging
+from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database import crud, schemas
-from backend.database.session import get_db
+from backend.database.session import SessionLocal, get_db
 from backend.core.utils import extract_domain
 from backend.services.crawler import CrawlerService
 
 router = APIRouter(prefix="/api/crawl", tags=["crawl"])
 crawler_service = CrawlerService()
+
+
+def run_crawl_background(job_id: str, raw_input: str):
+    db = SessionLocal()
+    try:
+        import asyncio
+
+        asyncio.run(crawler_service.run_crawl(job_id, raw_input, db))
+    except Exception as e:
+        logging.error(f"Background crawl failed: {e}")
+    finally:
+        db.close()
 
 
 @router.post("", response_model=schemas.CrawlJobResponse, status_code=202)
@@ -21,7 +34,7 @@ def create_crawl_job(
     raw_input = payload.domain.strip()
     domain = extract_domain(raw_input)
     job = crud.create_crawl_job(db, domain)
-    background_tasks.add_task(crawler_service.run_crawl, job.id, raw_input, db)
+    background_tasks.add_task(run_crawl_background, job.id, raw_input)
     return job
 
 

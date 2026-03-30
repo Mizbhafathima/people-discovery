@@ -10,9 +10,10 @@ COLUMNS = [
     ("Name", "name"),
     ("Email", "email"),
     ("Phone", "phone"),
-    ("Postcode", "postcode"),
     ("Job Title", "job_title"),
     ("LinkedIn URL", "linkedin_url"),
+    ("Instagram URL", "instagram_url"),
+    ("Twitter URL", "twitter_url"),
     ("Source URL", "source_url"),
     ("Confidence", "confidence"),
     ("Domain", "domain"),
@@ -30,51 +31,37 @@ class ExporterService:
         return results
 
     def to_json(self, people: List[dict]) -> str:
-        return json.dumps(people, indent=2)
+        return json.dumps(people, indent=2, ensure_ascii=False)
 
     def to_excel_bytes(self, people: List[dict]) -> bytes:
         workbook = Workbook()
-        workbook.remove(workbook.active)
+        ws = workbook.active
+        ws.title = "People"
 
-        grouped = {}
-        for person in people:
-            domain = person.get("domain") or "unknown"
-            grouped.setdefault(domain, []).append(person)
+        ws.cell(row=1, column=1, value="All Domains")
+        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(COLUMNS))
+        title_cell = ws.cell(row=1, column=1)
+        title_cell.font = Font(bold=True, color="FFFFFF")
+        title_cell.fill = PatternFill(fill_type="solid", fgColor="1F3864")
+        title_cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        if not grouped:
-            grouped["people"] = []
+        for col_idx, (header, _) in enumerate(COLUMNS, start=1):
+            cell = ws.cell(row=2, column=col_idx, value=header)
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(fill_type="solid", fgColor="D9D9D9")
 
-        for domain, domain_people in grouped.items():
-            safe_name = str(domain)
-            for char in '\\/*?:[]':
-                safe_name = safe_name.replace(char, "_")
-            safe_name = (safe_name or "sheet")[:31]
-            ws = workbook.create_sheet(title=safe_name)
-
-            ws.cell(row=1, column=1, value=str(domain))
-            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(COLUMNS))
-            title_cell = ws.cell(row=1, column=1)
-            title_cell.font = Font(bold=True, color="FFFFFF")
-            title_cell.fill = PatternFill(fill_type="solid", fgColor="1F3864")
-            title_cell.alignment = Alignment(horizontal="center", vertical="center")
-
-            for col_idx, (header, _) in enumerate(COLUMNS, start=1):
-                cell = ws.cell(row=2, column=col_idx, value=header)
-                cell.font = Font(bold=True)
-                cell.fill = PatternFill(fill_type="solid", fgColor="D9D9D9")
-
-            for row_idx, person in enumerate(domain_people, start=3):
-                fill_color = "FFFFFF" if row_idx % 2 == 0 else "EBF3FF"
-                for col_idx, (_, key) in enumerate(COLUMNS, start=1):
-                    cell = ws.cell(row=row_idx, column=col_idx, value=person.get(key))
-                    cell.fill = PatternFill(fill_type="solid", fgColor=fill_color)
-
+        for row_idx, person in enumerate(people, start=3):
+            fill_color = "FFFFFF" if row_idx % 2 == 0 else "EBF3FF"
             for col_idx, (_, key) in enumerate(COLUMNS, start=1):
-                max_length = len(str(ws.cell(row=2, column=col_idx).value or ""))
-                for person in domain_people:
-                    value = person.get(key)
-                    max_length = max(max_length, len(str(value)) if value is not None else 0)
-                ws.column_dimensions[get_column_letter(col_idx)].width = min(60, max(12, max_length + 4))
+                cell = ws.cell(row=row_idx, column=col_idx, value=person.get(key))
+                cell.fill = PatternFill(fill_type="solid", fgColor=fill_color)
+
+        for col_idx, (_, key) in enumerate(COLUMNS, start=1):
+            max_length = len(str(ws.cell(row=2, column=col_idx).value or ""))
+            for person in people:
+                value = person.get(key)
+                max_length = max(max_length, len(str(value)) if value is not None else 0)
+            ws.column_dimensions[get_column_letter(col_idx)].width = min(60, max(12, max_length + 4))
 
         buffer = io.BytesIO()
         workbook.save(buffer)

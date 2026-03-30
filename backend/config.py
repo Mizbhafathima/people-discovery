@@ -4,17 +4,18 @@ import warnings
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 ENV_FILE = BASE_DIR / ".env"
+DATABASE_URL = f"sqlite:///{(DATA_DIR / 'people_discovery.db').as_posix()}"
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "sqlite:///./data/people_discovery.db"
+    DATABASE_URL: str = DATABASE_URL
     MAX_PAGES_PER_CRAWL: int = 50
     LLM_PROVIDER: str = "google"
     GOOGLE_API_KEY: str = ""
     GOOGLE_MODEL: str = "gemma-2-27b-it"
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "gemma2:9b"
     APP_ENV: str = "development"
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
